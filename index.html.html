@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мой день</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600&family=Geologica:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0f0f12;
+  --surface: #17171c;
+  --surface2: #1e1e26;
+  --border: #2a2a35;
+  --accent: #c8f05a;
+  --accent2: #5af0c8;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --done: #1c1c24;
+  --done-text: #45455a;
+  --red: #f05a5a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Geologica', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header { margin-bottom: 20px; }
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.day-label {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px; font-weight: 300;
+  letter-spacing: 0.2em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.date-big {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.progress-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 18px; margin-bottom: 16px;
+}
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.progress-label { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+.progress-pct { font-family: 'Unbounded', sans-serif; font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1; }
+.bar-bg { background: var(--border); border-radius: 100px; height: 7px; overflow: hidden; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 100px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+.progress-stats { display: flex; gap: 14px; margin-top: 9px; }
+.stat { font-size: 12px; color: var(--muted); }
+.stat b { color: var(--text); font-weight: 500; }
+
+.section-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 18px 0 9px;
+}
+.section-title { font-size: 11px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
+.section-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 10px;
+  color: var(--muted); font-size: 11px; cursor: pointer;
+  font-family: 'Geologica', sans-serif; transition: all 0.2s;
+}
+.section-btn:hover { color: var(--text); border-color: #3a3a50; }
+
+.task-list { display: flex; flex-direction: column; gap: 5px; }
+
+.task-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 11px;
+  transition: all 0.2s; position: relative;
+}
+.task-item:hover { border-color: #3a3a50; background: var(--surface2); }
+.task-item.done { background: var(--done); border-color: transparent; }
+.task-item.done .task-text { text-decoration: line-through; color: var(--done-text); }
+.task-item.recurring { border-left: 3px solid var(--accent2); }
+.task-item.recurring.done { border-left-color: #2a2a35; }
+
+.cb {
+  width: 20px; height: 20px; border: 2px solid var(--border);
+  border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.task-item.done .cb { background: var(--accent); border-color: var(--accent); }
+.cb svg { display: none; }
+.task-item.done .cb svg { display: block; }
+
+.task-text { font-size: 14px; flex: 1; cursor: pointer; line-height: 1.3; }
+.rec-badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 100px;
+  background: rgba(90,240,200,0.1); color: var(--accent2);
+  letter-spacing: 0.05em; flex-shrink: 0;
+}
+
+.task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.task-item:hover .task-actions { opacity: 1; }
+.act-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 14px; padding: 2px 4px;
+  transition: color 0.15s; line-height: 1;
+}
+.act-btn:hover { color: var(--text); }
+.act-btn.del:hover { color: var(--red); }
+
+.add-row { display: flex; gap: 7px; margin-top: 8px; }
+.add-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 13px;
+  color: var(--text); font-family: 'Geologica', sans-serif; font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.add-input:focus { border-color: var(--accent); }
+.add-input::placeholder { color: var(--muted); }
+.add-btn {
+  background: var(--accent); color: #0f0f12; border: none;
+  border-radius: 10px; padding: 11px 15px;
+  font-size: 20px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.2s; line-height: 1;
+}
+.add-btn:hover { opacity: 0.85; }
+
+.archive-toggle {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--muted);
+  font-size: 12px; cursor: pointer; margin-top: 12px;
+  font-family: 'Geologica', sans-serif; padding: 0;
+  transition: color 0.2s;
+}
+.archive-toggle:hover { color: var(--text); }
+.archive-list { margin-top: 7px; display: flex; flex-direction: column; gap: 4px; }
+.arch-item {
+  background: var(--done); border-radius: 10px;
+  padding: 9px 13px; font-size: 13px; color: var(--done-text);
+  text-decoration: line-through; display: flex; align-items: center; gap: 8px;
+}
+.arch-date { font-size: 10px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+.habits-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.habit-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 13px;
+  display: flex; align-items: center; gap: 9px;
+  cursor: pointer; transition: all 0.2s; position: relative;
+}
+.habit-card:hover { border-color: #3a3a50; }
+.habit-card.checked { border-color: var(--accent); background: rgba(200,240,90,0.06); }
+.habit-icon { font-size: 20px; flex-shrink: 0; }
+.habit-info { flex: 1; min-width: 0; }
+.habit-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.habit-streak { font-size: 11px; color: var(--muted); }
+.habit-check {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border); flex-shrink: 0; transition: all 0.2s;
+}
+.habit-card.checked .habit-check { background: var(--accent); border-color: var(--accent); }
+.habit-del {
+  position: absolute; top: 6px; right: 8px;
+  background: none; border: none; color: var(--muted);
+  font-size: 13px; cursor: pointer; opacity: 0;
+  transition: opacity 0.15s; line-height: 1; padding: 2px;
+}
+.habit-card:hover .habit-del { opacity: 1; }
+.habit-del:hover { color: var(--red); }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px; backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px; width: 100%; max-width: 360px;
+  transform: translateY(16px); transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title {
+  font-family: 'Unbounded', sans-serif; font-size: 14px;
+  font-weight: 600; margin-bottom: 18px;
+}
+.modal-row { margin-bottom: 12px; }
+.modal-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+.modal-input {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 13px;
+  color: var(--text); font-family: 'Geologica', sans-serif; font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 13px; cursor: pointer;
+}
+.modal-toggle span { font-size: 14px; }
+.toggle-dot {
+  width: 36px; height: 20px; background: var(--border);
+  border-radius: 100px; position: relative; transition: background 0.2s;
+}
+.toggle-dot::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; background: var(--muted);
+  border-radius: 50%; transition: all 0.2s;
+}
+.toggle-dot.on { background: var(--accent); }
+.toggle-dot.on::after { left: 19px; background: #0f0f12; }
+.modal-btns { display: flex; gap: 8px; margin-top: 18px; }
+.modal-cancel {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px; color: var(--muted);
+  font-family: 'Geologica', sans-serif; font-size: 14px; cursor: pointer;
+  transition: all 0.2s;
+}
+.modal-cancel:hover { color: var(--text); }
+.modal-save {
+  flex: 1; background: var(--accent); border: none;
+  border-radius: 10px; padding: 11px; color: #0f0f12;
+  font-family: 'Geologica', sans-serif; font-size: 14px;
+  font-weight: 500; cursor: pointer; transition: opacity 0.2s;
+}
+.modal-save:hover { opacity: 0.85; }
+
+.emoji-grid {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: 6px;
+}
+.emoji-opt {
+  font-size: 20px; text-align: center; padding: 4px;
+  border-radius: 8px; cursor: pointer; transition: background 0.15s;
+  border: 2px solid transparent;
+}
+.emoji-opt:hover { background: var(--surface2); }
+.emoji-opt.sel { border-color: var(--accent); background: rgba(200,240,90,0.1); }
+
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="day-label">Мой день</div>
+      <div class="date-big" id="dateDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-block">
+  <div class="progress-header">
+    <div class="progress-label">Прогресс дня</div>
+    <div class="progress-pct" id="pctText">0%</div>
+  </div>
+  <div class="bar-bg"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+  <div class="progress-stats">
+    <div class="stat">Готово: <b id="doneC">0</b></div>
+    <div class="stat">Осталось: <b id="leftC">0</b></div>
+    <div class="stat">Всего: <b id="totalC">0</b></div>
+  </div>
+</div>
+
+<div class="section-head">
+  <div class="section-title">Задачи</div>
+  <button class="section-btn" onclick="openTaskModal()">+ Добавить</button>
+</div>
+<div class="task-list" id="taskList"></div>
+<div class="add-row">
+  <input class="add-input" id="quickInput" placeholder="Быстро добавить задачу..."/>
+  <button class="add-btn" onclick="quickAdd()">+</button>
+</div>
+<button class="archive-toggle" id="archToggleBtn" onclick="toggleArchive()">▸ Архив выполненных</button>
+<div class="archive-list" id="archiveList" style="display:none"></div>
+
+<div class="divider"></div>
+
+<div class="section-head">
+  <div class="section-title">Привычки</div>
+  <button class="section-btn" onclick="openHabitModal()">+ Добавить</button>
+</div>
+<div class="habits-grid" id="habitsGrid"></div>
+
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-title" id="taskModalTitle">Новая задача</div>
+    <div class="modal-row">
+      <div class="modal-label">Название</div>
+      <input class="modal-input" id="taskNameInput" placeholder="Что нужно сделать?"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Повторять каждый день</div>
+      <div class="modal-toggle" onclick="toggleRecurring()">
+        <span>Ежедневная задача</span>
+        <div class="toggle-dot" id="recurToggle"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeTaskModal()">Отмена</button>
+      <button class="modal-save" onclick="saveTask()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="habitModal">
+  <div class="modal">
+    <div class="modal-title" id="habitModalTitle">Новая привычка</div>
+    <div class="modal-row">
+      <div class="modal-label">Название</div>
+      <input class="modal-input" id="habitNameInput" placeholder="Название привычки"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Иконка</div>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeHabitModal()">Отмена</button>
+      <button class="modal-save" onclick="saveHabit()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EMOJIS = ['💪','🚶','💧','📵','📚','🧘','🏃','🥗','😴','✍️','🎯','🌿','🧹','💊','🛁','🎸','🖊️','🌅','🏋️','🧠'];
+const KEY = 'planner2';
+const TODAY = new Date().toDateString();
+const DAYS = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+function defaultState() {
+  return {
+    date: TODAY,
+    tasks: [
+      {id:1,text:'Тренировка',done:false,recurring:true},
+      {id:2,text:'Постричься',done:false,recurring:false},
+      {id:3,text:'Пополнить ИБКР',done:false,recurring:false},
+      {id:4,text:'Отсканировать документы',done:false,recurring:false},
+      {id:5,text:'Проверить ссылки от мамы',done:false,recurring:false},
+    ],
+    habits: [
+      {id:'h1',name:'Тренировка',icon:'💪',checked:false,streak:0},
+      {id:'h2',name:'Выйти на улицу',icon:'🚶',checked:false,streak:0},
+      {id:'h3',name:'Выпить воду',icon:'💧',checked:false,streak:0},
+      {id:'h4',name:'Без соц. сетей до обеда',icon:'📵',checked:false,streak:0},
+    ],
+    archive:[],nextId:10
+  };
+}
+
+function load() { try { const r=localStorage.getItem(KEY); return r?JSON.parse(r):null; } catch{return null;} }
+function save() { try { localStorage.setItem(KEY,JSON.stringify(state)); } catch{} }
+
+let state = load();
+if(!state) {
+  state = defaultState();
+} else if(state.date !== TODAY) {
+  const doneTasks = state.tasks.filter(t=>t.done&&!t.recurring);
+  const newArchive = [...doneTasks.map(t=>({...t,archivedDate:state.date})),  ...(state.archive||[])].slice(0,50);
+  const newTasks = state.tasks.filter(t=>t.recurring||!t.done).map(t=>({...t,done:false}));
+  const newHabits = state.habits.map(h=>({...h,streak:h.checked?(h.streak||0)+1:0,checked:false}));
+  state={...state,date:TODAY,tasks:newTasks,habits:newHabits,archive:newArchive};
+}
+save();
+
+const n=new Date();
+document.getElementById('dateDisplay').textContent=`${DAYS[n.getDay()]}, ${n.getDate()} ${MONTHS[n.getMonth()]}`;
+
+function renderTasks() {
+  const list=document.getElementById('taskList');
+  const all=[...state.tasks.filter(t=>!t.done),...state.tasks.filter(t=>t.done)];
+  list.innerHTML=all.map(t=>`
+    <div class="task-item ${t.done?'done':''} ${t.recurring?'recurring':''}">
+      <div class="cb" onclick="toggleTask(${t.id})">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M1.5 5L4 7.5L8.5 2.5" stroke="#0f0f12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="task-text" onclick="toggleTask(${t.id})">${t.text}</span>
+      ${t.recurring?'<span class="rec-badge">каждый день</span>':''}
+      <div class="task-actions">
+        <button class="act-btn" onclick="editTask(${t.id})">✎</button>
+        <button class="act-btn del" onclick="deleteTask(${t.id})">×</button>
+      </div>
+    </div>`).join('');
+  updateProgress();
+}
+
+function updateProgress() {
+  const total=state.tasks.length, done=state.tasks.filter(t=>t.done).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('barFill').style.width=pct+'%';
+  document.getElementById('pctText').textContent=pct+'%';
+  document.getElementById('doneC').textContent=done;
+  document.getElementById('leftC').textContent=total-done;
+  document.getElementById('totalC').textContent=total;
+}
+
+function toggleTask(id){const t=state.tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();renderTasks();renderArchive();}}
+function deleteTask(id){state.tasks=state.tasks.filter(t=>t.id!==id);save();renderTasks();}
+function quickAdd(){const inp=document.getElementById('quickInput');const text=inp.value.trim();if(!text)return;state.tasks.push({id:state.nextId++,text,done:false,recurring:false});inp.value='';save();renderTasks();}
+document.getElementById('quickInput').addEventListener('keydown',e=>{if(e.key==='Enter')quickAdd();});
+
+let editingTaskId=null,isRecurring=false;
+function openTaskModal(id){
+  editingTaskId=id||null;isRecurring=false;
+  document.getElementById('taskModalTitle').textContent=id?'Редактировать задачу':'Новая задача';
+  if(id){const t=state.tasks.find(t=>t.id===id);document.getElementById('taskNameInput').value=t.text;isRecurring=t.recurring;}
+  else document.getElementById('taskNameInput').value='';
+  document.getElementById('recurToggle').className='toggle-dot'+(isRecurring?' on':'');
+  document.getElementById('taskModal').classList.add('open');
+  setTimeout(()=>document.getElementById('taskNameInput').focus(),200);
+}
+function closeTaskModal(){document.getElementById('taskModal').classList.remove('open');}
+function toggleRecurring(){isRecurring=!isRecurring;document.getElementById('recurToggle').className='toggle-dot'+(isRecurring?' on':'');}
+function editTask(id){openTaskModal(id);}
+function saveTask(){
+  const text=document.getElementById('taskNameInput').value.trim();if(!text)return;
+  if(editingTaskId){const t=state.tasks.find(t=>t.id===editingTaskId);if(t){t.text=text;t.recurring=isRecurring;}}
+  else state.tasks.push({id:state.nextId++,text,done:false,recurring:isRecurring});
+  save();renderTasks();closeTaskModal();
+}
+document.getElementById('taskNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
+
+let archOpen=false;
+function renderArchive(){
+  const list=document.getElementById('archiveList');
+  const all=[...state.tasks.filter(t=>t.done).map(t=>({...t,archivedDate:'сегодня'})),...(state.archive||[])];
+  if(!all.length){list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">Архив пуст</div>';return;}
+  list.innerHTML=all.map(t=>`<div class="arch-item"><span>✓</span><span>${t.text}</span><span class="arch-date">${t.archivedDate||''}</span></div>`).join('');
+}
+function toggleArchive(){
+  archOpen=!archOpen;
+  document.getElementById('archiveList').style.display=archOpen?'flex':'none';
+  document.getElementById('archToggleBtn').textContent=(archOpen?'▾ ':'▸ ')+'Архив выполненных';
+  if(archOpen)renderArchive();
+}
+
+function renderHabits(){
+  document.getElementById('habitsGrid').innerHTML=state.habits.map(h=>`
+    <div class="habit-card ${h.checked?'checked':''}" onclick="toggleHabit('${h.id}')">
+      <span class="habit-icon">${h.icon}</span>
+      <div class="habit-info">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-streak">${h.streak>0?'🔥 '+h.streak+' дн.':'Начни сегодня'}</div>
+      </div>
+      <div class="habit-check"></div>
+      <button class="habit-del" onclick="event.stopPropagation();deleteHabit('${h.id}')">×</button>
+    </div>`).join('');
+}
+function toggleHabit(id){const h=state.habits.find(h=>h.id===id);if(h){h.checked=!h.checked;save();renderHabits();}}
+function deleteHabit(id){state.habits=state.habits.filter(h=>h.id!==id);save();renderHabits();}
+
+let selectedEmoji='⭐',editingHabitId=null;
+function buildEmojiGrid(){
+  document.getElementById('emojiGrid').innerHTML=EMOJIS.map(e=>`<div class="emoji-opt ${e===selectedEmoji?'sel':''}" onclick="selectEmoji('${e}')">${e}</div>`).join('');
+}
+function selectEmoji(e){selectedEmoji=e;buildEmojiGrid();}
+function openHabitModal(id){
+  editingHabitId=id||null;
+  selectedEmoji=id?(state.habits.find(h=>h.id===id)?.icon||'⭐'):'⭐';
+  document.getElementById('habitModalTitle').textContent=id?'Редактировать привычку':'Новая привычка';
+  document.getElementById('habitNameInput').value=id?(state.habits.find(h=>h.id===id)?.name||''):'';
+  buildEmojiGrid();
+  document.getElementById('habitModal').classList.add('open');
+  setTimeout(()=>document.getElementById('habitNameInput').focus(),200);
+}
+function closeHabitModal(){document.getElementById('habitModal').classList.remove('open');}
+function saveHabit(){
+  const name=document.getElementById('habitNameInput').value.trim();if(!name)return;
+  if(editingHabitId){const h=state.habits.find(h=>h.id===editingHabitId);if(h){h.name=name;h.icon=selectedEmoji;}}
+  else state.habits.push({id:'h'+Date.now(),name,icon:selectedEmoji,checked:false,streak:0});
+  save();renderHabits();closeHabitModal();
+}
+document.getElementById('habitNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveHabit();});
+['taskModal','habitModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+
+renderTasks();
+renderHabits();
+</script>
+</body>
+</html>
